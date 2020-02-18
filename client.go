@@ -1,8 +1,10 @@
 package gosocketio
 
 import (
-	"github.com/graarh/golang-socketio/transport"
+	"fmt"
 	"strconv"
+
+	"github.com/graarh/golang-socketio/transport"
 )
 
 const (
@@ -64,6 +66,9 @@ func Dial(url string, tr transport.Transport) (*Client, error) {
 
 // Redial reconnects to host
 func Redial(c *Client) {
+	fmt.Println("toto")
+	c.initChannel()
+
 	var err error
 	for {
 		c.conn, err = c.tr.Connect(c.url)
