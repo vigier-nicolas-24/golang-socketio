@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	webSocketProtocol = "ws://"
+	webSocketProtocol       = "ws://"
 	webSocketSecureProtocol = "wss://"
-	socketioUrl       = "/socket.io/?EIO=3&transport=websocket"
+	socketioUrl             = "/socket.io/?EIO=3&transport=websocket"
 )
 
 /**
@@ -17,11 +17,13 @@ Socket.io client representation
 type Client struct {
 	methods
 	Channel
+	url string
+	tr  transport.Transport
 }
 
 /**
 Get ws/wss url by host and port
- */
+*/
 func GetUrl(host string, port int, secure bool) string {
 	var prefix string
 	if secure {
@@ -44,6 +46,8 @@ func Dial(url string, tr transport.Transport) (*Client, error) {
 	c := &Client{}
 	c.initChannel()
 	c.initMethods()
+	c.url = url
+	c.tr = tr
 
 	var err error
 	c.conn, err = tr.Connect(url)
@@ -56,6 +60,20 @@ func Dial(url string, tr transport.Transport) (*Client, error) {
 	go pinger(&c.Channel)
 
 	return c, nil
+}
+
+// Redial reconnects to host
+func Redial(c *Client) {
+	var err error
+	for {
+		c.conn, err = c.tr.Connect(c.url)
+		if err == nil {
+			break
+		}
+	}
+	go inLoop(&c.Channel, &c.methods)
+	go outLoop(&c.Channel, &c.methods)
+	go pinger(&c.Channel)
 }
 
 /**
